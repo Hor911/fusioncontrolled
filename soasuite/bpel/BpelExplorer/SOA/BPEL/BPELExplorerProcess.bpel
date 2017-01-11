@@ -1,0 +1,74 @@
+<?xml version = "1.0" encoding = "UTF-8" ?>
+<!--
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  Oracle JDeveloper BPEL Designer 
+  
+  Created: Wed Jan 11 04:21:00 MSK 2017
+  Author:  horoshilov
+  Type: BPEL 2.0 Process
+  Purpose: One Way BPEL Process
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+-->
+<process name="BPELExplorerProcess"
+               targetNamespace="http://xmlns.oracle.com/bpel/BpelExplorer/BPELExplorerProcess"
+               xmlns="http://docs.oasis-open.org/wsbpel/2.0/process/executable"
+               xmlns:client="http://xmlns.oracle.com/bpel/BpelExplorer/BPELExplorerProcess"
+               xmlns:ora="http://schemas.oracle.com/xpath/extension"
+               xmlns:bpelx="http://schemas.oracle.com/bpel/extension"
+               xmlns:ui="http://xmlns.oracle.com/soa/designer"
+               xmlns:bpel="http://docs.oasis-open.org/wsbpel/2.0/process/executable">
+
+  <import ui:processWSDL="true" namespace="http://xmlns.oracle.com/bpel/BpelExplorer/BPELExplorerProcess" location="../WSDLs/BPELExplorerProcess.wsdl" importType="http://schemas.xmlsoap.org/wsdl/"/>
+  <!-- 
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+      PARTNERLINKS                                                      
+      List of services participating in this BPEL process               
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  --> 
+  <partnerLinks>
+    <!-- 
+      The 'client' role represents the requester of this service. It is 
+      used for callback. The location and correlation information associated
+      with the client role are automatically set using WS-Addressing.
+    -->
+    <partnerLink name="bpelexplorerprocess_client" partnerLinkType="client:BPELExplorerProcess" myRole="BPELExplorerProcessProvider"/>
+  </partnerLinks>
+
+  <!-- 
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+      VARIABLES                                                        
+      List of messages and XML documents used within this BPEL process 
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  -->
+  <variables>
+    <!-- Reference to the message passed as input during initiation -->
+    <variable name="inputVariable" messageType="client:BPELExplorerProcessRequestMessage"/>
+
+  </variables>
+
+  <!-- 
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+     ORCHESTRATION LOGIC                                               
+     Set of activities coordinating the flow of messages across the    
+     services integrated within this business process                  
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  -->
+  <sequence name="main">
+
+    <!-- Receive input from requestor. (Note: This maps to operation defined in BPELExplorerProcess.wsdl) -->
+    <receive name="receiveInput" partnerLink="bpelexplorerprocess_client" portType="client:BPELExplorerProcess" operation="process" variable="inputVariable" createInstance="yes"/>
+    <extensionActivity>
+      <bpelx:exec name="GetServerName">
+        <![CDATA[try {  
+  javax.naming.InitialContext ctx = new javax.naming.InitialContext();  
+  javax.management.MBeanServer beanServer = (javax.management.MBeanServer) ctx.lookup("java:comp/env/jmx/runtime");   
+  javax.management.ObjectName runtimeService = new javax.management.ObjectName("com.bea:Name=RuntimeService,Type=weblogic.management.mbeanservers.runtime.RuntimeServiceMBean");   
+  javax.management.ObjectName serverRuntime = (javax.management.ObjectName) beanServer.getAttribute(runtimeService, "ServerRuntime");   
+  addAuditTrailEntry((String) beanServer.getAttribute(serverRuntime, "Name"));  
+} catch (Exception e) {  
+  addAuditTrailEntry(e); 
+}]]>
+      </bpelx:exec>
+    </extensionActivity>
+  </sequence>
+</process>
